@@ -20,7 +20,7 @@ File File::load_from_memory(const char*& data)
 	return result;
 }
 
-void File::save_to_memory(char*& data)
+void File::save_to_memory(char*& data) const
 {
 	set_uint32(data, name_length);
 	set_uint64(data, size);
@@ -57,7 +57,7 @@ Dir Dir::load_from_memory(const char*& data)
 	return result;
 }
 
-void Dir::save_to_memory(char*& data)
+void Dir::save_to_memory(char*& data) const
 {
 	set_uint32(data, dir_index);
 	set_uint32(data, name_length);
@@ -106,7 +106,7 @@ Pak Pak::load_from_memory(const char* data)
 	return result;
 }
 
-void Pak::save_to_memory(char* data)
+void Pak::save_to_memory(char* data) const
 {
 	char* data_base = data;
 
@@ -121,13 +121,11 @@ void Pak::save_to_memory(char* data)
 		directories[dir_idx].save_to_memory(data);
 
 		// Copy the actual file contents.
-		Dir& current_dir = directories[dir_idx];
+		const Dir& current_dir = directories[dir_idx];
 		for (int file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
-			File& current_file = current_dir.files[file_idx];
+			const File& current_file = current_dir.files[file_idx];
 
 			current_file.save_to_memory(data);
-
-			//current_file.data = static_cast<char*>(std::malloc(current_file.size));
 			std::memcpy(data_base + current_file.pak_offset, current_file.data, current_file.size);
 		}
 	}
@@ -213,7 +211,7 @@ Pak Pak::load_from_dir(const char* dir_path)
 	return result;
 }
 
-void Pak::save_to_file(const char* file_path)
+void Pak::save_to_file(const char* file_path) const
 {
 	size_t total_size = 0;
 	total_size += 24;	// for pak header
