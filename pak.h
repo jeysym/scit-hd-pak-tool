@@ -9,6 +9,7 @@ struct File {
 	uint32_t crc32;			// 32-bit   - CRC32.
 	uint32_t zero;			// 32-bit   - Always zero, probably padding.
 	std::string name;		// 0-terminated UTF8 string - Name of the file.
+							// Example: "campfire_01.fxt\0"
 
 	char* data = 0;
 
@@ -23,6 +24,7 @@ struct Dir {
 	uint32_t num_of_files;	// 32-bit   - Number of files in directory.
 	uint32_t zero;			// 32-bit   - Always zero, probably some padding.
 	std::string name;		// 0-terminated UTF8 string - Name of the directory.
+							// Example: "\\bin_win32\\\\effects\\\0"
 
 	std::vector<File> files;
 

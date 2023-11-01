@@ -125,7 +125,9 @@ void Pak::save_to_memory(char* data)
 		for (int file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
 			File& current_file = current_dir.files[file_idx];
 
-			current_file.data = static_cast<char*>(std::malloc(current_file.size));
+			current_file.save_to_memory(data);
+
+			//current_file.data = static_cast<char*>(std::malloc(current_file.size));
 			std::memcpy(data_base + current_file.pak_offset, current_file.data, current_file.size);
 		}
 	}
@@ -199,7 +201,10 @@ Pak Pak::load_from_dir(const char* dir_path)
 			file.data = static_cast<char*>(std::malloc(file.size));
 
 			// read the file here into buffer.
-			//HANDLE pak_file = CreateFileA(file.name, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+			std::string file_path = std::string(".\\") + dir.name + std::string("\\") + file.name;
+			HANDLE file_handle = CreateFileA(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+			DWORD bytes_read = 0;
+			ReadFile(file_handle, file.data, file.size, &bytes_read, 0);
 		}
 	}
 
