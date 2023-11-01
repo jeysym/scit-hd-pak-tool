@@ -1,6 +1,7 @@
 #include "pak.h"
 #include <windows.h>
 #include <iostream>
+#include <filesystem>
 
 File File::load_from_memory(const char*& data)
 {
@@ -43,6 +44,7 @@ Dir Dir::load_from_memory(const char*& data)
 
 Pak Pak::load_from_memory(const char* data)
 {
+	const char* data_base = data;
 	Pak result;
 
 	// Parse the header
@@ -62,7 +64,7 @@ Pak Pak::load_from_memory(const char* data)
 			File& current_file = current_dir.files[file_idx];
 
 			current_file.data = static_cast<char*>(std::malloc(current_file.size));
-			std::memcpy(current_file.data, data + current_file.pak_offset, current_file.size);
+			std::memcpy(current_file.data, data_base + current_file.pak_offset, current_file.size);
 		}
 	}
 
@@ -83,7 +85,22 @@ void Pak::save_to_file(const char* file_path)
 
 void Pak::save_to_dir(const char* dir_path)
 {
-	// TODO(jeysym): Implement
+	for (int dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
+		Dir& current_dir = directories[dir_idx];
+
+		for (int file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
+			File& current_file = current_dir.files[file_idx];
+
+			std::string d_path = std::string(".\\") + dir_path + current_dir.name;
+			std::string file_path = dir_path + current_dir.name + current_file.name;
+
+			std::filesystem::create_directories(d_path);
+
+			HANDLE file = CreateFileA(file_path.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+			DWORD bytes_written = 0;
+			WriteFile(file, current_file.data, current_file.size, &bytes_written, 0);
+		}
+	}
 }
 
 Pak Pak::load_from_file(const char* file_path) {
