@@ -14,6 +14,7 @@ struct File {
 
 	static File load_from_memory(const char*& data);
 	void save_to_memory(char*& data);
+	size_t size_in_pak() const;
 };
 
 struct Dir {
@@ -27,6 +28,7 @@ struct Dir {
 
 	static Dir load_from_memory(const char*& data);
 	void save_to_memory(char*& data);
+	size_t size_in_pak() const;
 };
 
 struct Pak {
@@ -45,4 +47,6 @@ struct Pak {
 	void save_to_file(const char* file_path);
 	void save_to_memory(char* data);
 	void save_to_dir(const char* dir_path);
+
+	size_t size_in_pak() const;
 };

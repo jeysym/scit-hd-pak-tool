@@ -4,6 +4,7 @@
 #include <bit>
 #include <string>
 #include <vector>
+#include <map>
 #include <cassert>
 #include <cstdlib>
 
