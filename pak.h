@@ -10,7 +10,9 @@ struct File {
 	uint32_t zero;			// 32-bit   - Always zero, probably padding.
 	std::string name;		// 0-terminated UTF8 string - Name of the file.
 
-	void load(const char*& data);
+	char* data = 0;
+
+	static File load_from_memory(const char*& data);
 };
 
 struct Dir {
@@ -22,7 +24,7 @@ struct Dir {
 
 	std::vector<File> files;
 
-	void load(const char*& data);
+	static Dir load_from_memory(const char*& data);
 };
 
 struct Pak {
@@ -35,8 +37,9 @@ struct Pak {
 
 	std::vector<Dir> directories;
 
-	static Pak load_from_pak(const char* data);
+	static Pak load_from_file(const char* file_path);
+	static Pak load_from_memory(const char* data);
 	static Pak load_from_dir(const char* dir_path);
-	void save_to_pak(const char* buffer);
+	void save_to_file(const char* file_path);
 	void save_to_dir(const char* dir_path);
 };

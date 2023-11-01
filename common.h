@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <cassert>
+#include <cstdlib>
 
 
 // Takes pointer to 32-bit big-endian value and makes it the native endianess (little-endian on amd64).
@@ -51,3 +52,10 @@ inline std::string get_string(const char*& memory) {
 	memory += (result.size() + 1);
 	return result;
 }
+
+enum Error {
+	SUCCESS = 0,
+	MEMORY_ERROR,
+	IO_ERROR,
+	ARGUMENT_ERROR
+};
