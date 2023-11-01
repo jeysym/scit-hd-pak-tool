@@ -53,6 +53,25 @@ inline std::string get_string(const char*& memory) {
 	return result;
 }
 
+inline void set_uint32(char*& memory, uint32_t value) {
+	uint32_t* target = reinterpret_cast<uint32_t*>(memory);
+	*target = value;
+	BE_to_native(target);
+	memory += sizeof(uint32_t);
+}
+
+inline void set_uint64(char*& memory, uint64_t value) {
+	uint64_t* target = reinterpret_cast<uint64_t*>(memory);
+	*target = value;
+	BE_to_native(target);
+	memory += sizeof(uint64_t);
+}
+
+inline void set_string(char*& memory, std::string value) {
+	std::memcpy(memory, value.c_str(), value.size() + 1);
+	memory += (value.size() + 1);
+}
+
 enum Error {
 	SUCCESS = 0,
 	MEMORY_ERROR,

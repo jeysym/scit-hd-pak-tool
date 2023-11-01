@@ -13,6 +13,7 @@ struct File {
 	char* data = 0;
 
 	static File load_from_memory(const char*& data);
+	void save_to_memory(char*& data);
 };
 
 struct Dir {
@@ -25,6 +26,7 @@ struct Dir {
 	std::vector<File> files;
 
 	static Dir load_from_memory(const char*& data);
+	void save_to_memory(char*& data);
 };
 
 struct Pak {
@@ -41,5 +43,6 @@ struct Pak {
 	static Pak load_from_memory(const char* data);
 	static Pak load_from_dir(const char* dir_path);
 	void save_to_file(const char* file_path);
+	void save_to_memory(char* data);
 	void save_to_dir(const char* dir_path);
 };

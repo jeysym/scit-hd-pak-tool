@@ -20,6 +20,16 @@ File File::load_from_memory(const char*& data)
 	return result;
 }
 
+void File::save_to_memory(char*& data)
+{
+	set_uint32(data, name_length);
+	set_uint64(data, size);
+	set_uint64(data, pak_offset);
+	set_uint32(data, crc32);
+	set_uint32(data, zero);
+	set_string(data, name);
+}
+
 Dir Dir::load_from_memory(const char*& data)
 {
 	Dir result;
@@ -40,6 +50,21 @@ Dir Dir::load_from_memory(const char*& data)
 	}
 
 	return result;
+}
+
+void Dir::save_to_memory(char*& data)
+{
+	set_uint32(data, dir_index);
+	set_uint32(data, name_length);
+	set_uint32(data, num_of_files);
+	set_uint32(data, zero);
+	set_string(data, name);
+
+	// Save the files
+	for (int file_idx = 0; file_idx < num_of_files; ++file_idx)
+	{
+		files[file_idx].save_to_memory(data);
+	}
 }
 
 Pak Pak::load_from_memory(const char* data)
@@ -69,6 +94,31 @@ Pak Pak::load_from_memory(const char* data)
 	}
 
 	return result;
+}
+
+void Pak::save_to_memory(char* data)
+{
+	char* data_base = data;
+
+	// Save the header
+	set_uint64(data, tag);
+	set_uint64(data, base_offset);
+	set_uint32(data, num_dirs);
+	set_uint32(data, zero);
+
+	// Save the directories
+	for (int dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
+		directories[dir_idx].save_to_memory(data);
+
+		// Copy the actual file contents.
+		Dir& current_dir = directories[dir_idx];
+		for (int file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
+			File& current_file = current_dir.files[file_idx];
+
+			current_file.data = static_cast<char*>(std::malloc(current_file.size));
+			std::memcpy(data_base + current_file.pak_offset, current_file.data, current_file.size);
+		}
+	}
 }
 
 Pak Pak::load_from_dir(const char* dir_path)
