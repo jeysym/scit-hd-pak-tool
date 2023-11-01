@@ -3,6 +3,9 @@
 #include <iostream>
 #include <filesystem>
 
+// Data structures serialization
+// =============================
+
 File File::load_from_memory(const char*& data)
 {
 	File result;
@@ -131,14 +134,21 @@ void Pak::save_to_memory(char* data) const
 	}
 }
 
+size_t Pak::size_in_pak() const
+{
+	return sizeof(tag) + sizeof(base_offset) + sizeof(num_dirs) + sizeof(zero);
+}
+
+
+// Loading/saving of data structures from/to files and directories.
+// ================================================================
+
 Pak Pak::load_from_dir(const char* dir_path)
 {
 	using namespace std::filesystem;
 	Pak result;
 
 	std::vector<std::filesystem::directory_entry> files;
-
-	std::string d_path = std::string(".\\") + dir_path;
 
 	std::map<path, std::vector<directory_entry>> dir_to_files;
 
@@ -149,38 +159,59 @@ Pak Pak::load_from_dir(const char* dir_path)
 		}
 	}
 
-	result.tag = 0x504B424500000001;
-	//result.base_offset = ;
+	result.tag = Pak::TAG_MAGIC;
 	result.num_dirs = dir_to_files.size();
 	result.zero = 0;
 
-	int dir_index = 0;
-	for (const auto& it : dir_to_files) {
-		path dir = it.first;
-		const auto& files = it.second;
+	result.directories.resize(result.num_dirs);
 
-		//std::sort(files.begin(), files.end());
+	auto map_it = dir_to_files.begin();
+	for (int dir_idx = 0; dir_idx < result.num_dirs; ++dir_idx) {
 
-		result.directories.push_back(Dir());
-		result.directories[dir_index].dir_index = dir_index + 1;
-		result.directories[dir_index].name_length = dir.string().size() + 1;
-		result.directories[dir_index].num_of_files = files.size();
-		result.directories[dir_index].zero = 0;
-		result.directories[dir_index].name = dir.string();
+		path map_dir = map_it->first;
+		auto& map_files = map_it->second;
 
-		for (const auto& fit : files) {
-			result.directories[dir_index].files.push_back(File());
-			auto last = result.directories[dir_index].files.rbegin();
-			last->name_length = fit.path().filename().string().size() + 1;
-			last->size = fit.file_size();
-			last->zero = 0;
-			last->name = fit.path().filename().string();
+		std::sort(map_files.begin(), map_files.end());
+
+		Dir& dir = result.directories[dir_idx];
+
+		dir.dir_index = dir_idx + 1;
+
+		std::string s = map_dir.string();
+		std::string s2 = s.substr(s.find('\\') + 1);
+
+		std::string s3;
+		s3.push_back('\\');
+		for (char c : s2) {
+			if (c == '\\')
+				s3.push_back(c);
+			s3.push_back(c);
+		}
+		s3.push_back('\\');
+
+
+		dir.name = s3;
+		dir.name_length = dir.name.size() + 1;
+		dir.num_of_files = map_files.size();
+		dir.zero = 0;
+
+		dir.files.resize(dir.num_of_files);
+
+		for (int file_idx = 0; file_idx < dir.num_of_files; ++file_idx) {
+			File& file = dir.files[file_idx];
+			const directory_entry& de = map_files[file_idx];
+
+			file.name = de.path().filename().string();
+			file.name_length = file.name.size() + 1;
+			file.size = de.file_size();
+			file.zero = 0;
 		}
 
-		dir_index++;
+		map_it++;
 	}
 
 	size_t base_offset = 0;
+	base_offset += result.size_in_pak();
 	for (const auto& dir : result.directories) {
 		base_offset += dir.size_in_pak();
 		for (const auto& file : dir.files) {
@@ -199,30 +230,26 @@ Pak Pak::load_from_dir(const char* dir_path)
 			file.data = static_cast<char*>(std::malloc(file.size));
 
 			// read the file here into buffer.
-			std::string file_path = std::string(".\\") + dir.name + std::string("\\") + file.name;
+			std::string file_path = dir_path + dir.name + file.name;
 			HANDLE file_handle = CreateFileA(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 			DWORD bytes_read = 0;
 			ReadFile(file_handle, file.data, file.size, &bytes_read, 0);
 		}
 	}
 
-
-	// TODO(jeysym): Implement
 	return result;
 }
 
 void Pak::save_to_file(const char* file_path) const
 {
 	size_t total_size = 0;
-	total_size += 24;	// for pak header
+	total_size += size_in_pak();	// for pak header
 
 	for (const Dir& dir : directories) {
-		total_size += 16;	// for dir header
-		total_size += (dir.name.size() + 1);
+		total_size += dir.size_in_pak();
 
 		for (const File& file : dir.files) {
-			total_size += 28;	// for file header
-			total_size += (file.name.size() + 1);
+			total_size += file.size_in_pak();
 			total_size += file.size;
 		}
 	}
@@ -253,11 +280,6 @@ void Pak::save_to_dir(const char* dir_path)
 			WriteFile(file, current_file.data, current_file.size, &bytes_written, 0);
 		}
 	}
-}
-
-size_t Pak::size_in_pak() const
-{
-	return sizeof(tag) + sizeof(base_offset) + sizeof(num_dirs) + sizeof(zero);
 }
 
 Pak Pak::load_from_file(const char* file_path) {
