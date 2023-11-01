@@ -35,5 +35,8 @@ struct Pak {
 
 	std::vector<Dir> directories;
 
-	void load(const char* data);
+	static Pak load_from_pak(const char* data);
+	static Pak load_from_dir(const char* dir_path);
+	void save_to_pak(const char* buffer);
+	void save_to_dir(const char* dir_path);
 };

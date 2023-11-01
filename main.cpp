@@ -11,11 +11,41 @@
 enum Error {
 	SUCCESS = 0,
 	MEMORY_ERROR,
-	IO_ERROR
+	IO_ERROR,
+	ARGUMENT_ERROR
 };
 
-int main()
+int main(int arg_count, char** args)
 {
+	if (arg_count != 3) {
+		std::cout
+			<< "Usage:\n"
+			<< "\n"
+			<< "scit-hd-pak-tool pak-to-dir example.pak\n"
+			<< "    Unpacks file 'exaple.pak' into individual files that will be stored in directory 'example'.\n"
+			<< "\n"
+			<< "scit-hd-pak-tool dir-to-pak example\n"
+			<< "    Packs the files in directory 'example' into file 'example.pak'.\n";
+		return SUCCESS;
+	}
+
+	const char* mode = args[1];
+	if (std::strcmp(mode, "pak-to-dir") != 0) {
+		const char* pak_path = args[2];
+
+		// TODO(jeysym): Load pak and save it to dir.
+	}
+	else if (std::strcmp(mode, "dir-to-pak") != 0) {
+		const char* dir_path = args[2];
+
+		// TODO(jeysym): Load dir and save it to pak.
+	}
+	else {
+		std::cerr << "[Error] Wrong arguments specified." << std::endl;
+		return ARGUMENT_ERROR;
+	}
+
+
 	HANDLE pak_file = CreateFile(L"data_win32.pak", GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (pak_file == INVALID_HANDLE_VALUE) {
 		std::cerr << "[Error] Failed to open the pak file." << std::endl;
