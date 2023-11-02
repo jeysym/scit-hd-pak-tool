@@ -13,7 +13,7 @@ struct File {
 
 	char* data = nullptr;
 
-	static File load_from_memory(const char*& data);
+	void load_from_memory(const char*& data);
 	void save_to_memory(char*& data) const;
 	size_t get_header_size() const;
 };
@@ -28,7 +28,7 @@ struct Dir {
 
 	std::vector<File> files;
 
-	static Dir load_from_memory(const char*& data);
+	void load_from_memory(const char*& data);
 	void save_to_memory(char*& data) const;
 	size_t get_header_size() const;
 	std::filesystem::path get_dir_path() const;
@@ -48,7 +48,7 @@ struct Pak {
 	std::vector<Dir> directories;
 
 	static Pak load_from_file(std::filesystem::path file_path);
-	static Pak load_from_memory(const char* data);
+	void load_from_memory(const char* data);
 	static Pak load_from_dir(std::filesystem::path dir_path);
 	void save_to_file(std::filesystem::path file_path) const;
 	void save_to_memory(char* data) const;

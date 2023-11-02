@@ -8,21 +8,17 @@ namespace fs = std::filesystem;
 // Data structures serialization
 // =============================
 
-File File::load_from_memory(const char*& data)
+void File::load_from_memory(const char*& data)
 {
-	File result;
-
 	// Parse the header
-	result.name_length = get_uint32(data);
-	result.size = get_uint64(data);
-	result.pak_offset = get_uint64(data);
-	result.crc32 = get_uint32(data);
-	result.zero = get_uint32(data);
-	assert(result.zero == 0);
-	result.name = get_string(data);
-	assert((result.name.size() + 1) == result.name_length);
-
-	return result;
+	name_length = get_uint32(data);
+	size = get_uint64(data);
+	pak_offset = get_uint64(data);
+	crc32 = get_uint32(data);
+	zero = get_uint32(data);
+	assert(zero == 0);
+	name = get_string(data);
+	assert((name.size() + 1) == name_length);
 }
 
 void File::save_to_memory(char*& data) const
@@ -40,26 +36,23 @@ size_t File::get_header_size() const
 	return sizeof(name_length) + sizeof(size) + sizeof(pak_offset) + sizeof(crc32) + sizeof(zero) + name_length;
 }
 
-Dir Dir::load_from_memory(const char*& data)
+void Dir::load_from_memory(const char*& data)
 {
-	Dir result;
-
 	// Parse the header
-	result.dir_index = get_uint32(data);
-	result.name_length = get_uint32(data);
-	result.num_of_files = get_uint32(data);
-	result.zero = get_uint32(data);
-	assert(result.zero == 0);
-	result.name = get_string(data);
-	assert((result.name.size() + 1) == result.name_length);
+	dir_index = get_uint32(data);
+	name_length = get_uint32(data);
+	num_of_files = get_uint32(data);
+	zero = get_uint32(data);
+	assert(zero == 0);
+	name = get_string(data);
+	assert((name.size() + 1) == name_length);
 
 	// Parse the files
-	for (uint file_idx = 0; file_idx < result.num_of_files; ++file_idx)
+	files.resize(num_of_files);
+	for (uint file_idx = 0; file_idx < num_of_files; ++file_idx)
 	{
-		result.files.push_back(File::load_from_memory(data));
+		files[file_idx].load_from_memory(data);
 	}
-
-	return result;
 }
 
 void Dir::save_to_memory(char*& data) const
@@ -96,24 +89,23 @@ void Dir::set_dir_path(std::filesystem::path dir_path)
 	name = "\\" + path3 + "\\";									// "\\dir_a\\\\dir_b"
 }
 
-Pak Pak::load_from_memory(const char* data)
+void Pak::load_from_memory(const char* data)
 {
 	const char* data_base = data;
-	Pak result;
 
 	// Parse the header
-	result.tag = get_uint64(data);
-	result.base_offset = get_uint64(data);
-	result.num_dirs = get_uint32(data);
-	result.zero = get_uint32(data);
-	assert(result.zero == 0);
+	tag = get_uint64(data);
+	base_offset = get_uint64(data);
+	num_dirs = get_uint32(data);
+	zero = get_uint32(data);
+	assert(zero == 0);
 
 	// Parse the directories
-	for (uint dir_idx = 0; dir_idx < result.num_dirs; ++dir_idx) {
-		result.directories.push_back(Dir::load_from_memory(data));
+	directories.resize(num_dirs);
+	for (uint dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
+		Dir& current_dir = directories[dir_idx];
 
 		// Copy the actual file contents.
-		Dir& current_dir = result.directories[dir_idx];
 		for (uint file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
 			File& current_file = current_dir.files[file_idx];
 
@@ -121,8 +113,6 @@ Pak Pak::load_from_memory(const char* data)
 			std::memcpy(current_file.data, data_base + current_file.pak_offset, current_file.size);
 		}
 	}
-
-	return result;
 }
 
 void Pak::save_to_memory(char* data) const
@@ -325,7 +315,8 @@ Pak Pak::load_from_file(std::filesystem::path file_path) {
 
 	CloseHandle(pak_file);
 
-	Pak pak = Pak::load_from_memory(pak_buffer);
+	Pak pak;
+	pak.load_from_memory(pak_buffer);
 	std::free(pak_buffer);
 
 	return pak;
