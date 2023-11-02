@@ -92,17 +92,8 @@ void Dir::set_dir_path(std::filesystem::path dir_path)
 {
 	std::string path1 = dir_path.string();						// "pak_folder\\dir_a\\dir_b"
 	std::string path2 = path1.substr(path1.find('\\') + 1);		// "dir_a\\dir_b"
-
-	std::string path3;
-	path3.push_back('\\');
-	for (char c : path2) {
-		if (c == '\\')
-			path3.push_back(c);
-		path3.push_back(c);
-	}
-	path3.push_back('\\');		// "\\dir_a\\\\dir_b\\"
-
-	name = path3;
+	std::string path3 = replace_all(path2, "\\", "\\\\");		// "dir_a\\\\dir_b"
+	name = "\\" + path3 + "\\";									// "\\dir_a\\\\dir_b"
 }
 
 Pak Pak::load_from_memory(const char* data)

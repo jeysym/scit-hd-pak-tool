@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <bit>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <map>
 #include <cassert>
@@ -73,6 +74,17 @@ inline void set_uint64(char*& memory, uint64_t value) {
 inline void set_string(char*& memory, std::string value) {
 	std::memcpy(memory, value.c_str(), value.size() + 1);
 	memory += (value.size() + 1);
+}
+
+inline std::string replace_all(std::string original, const std::string_view& what, const std::string_view& to) {
+	size_t position = 0;
+
+	while ((position = original.find(what, position)) != std::string::npos) {
+		original.replace(position, what.size(), to);
+		position += to.size();
+	}
+
+	return original;
 }
 
 enum Error {
