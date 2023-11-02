@@ -54,7 +54,7 @@ Dir Dir::load_from_memory(const char*& data)
 	assert((result.name.size() + 1) == result.name_length);
 
 	// Parse the files
-	for (int file_idx = 0; file_idx < result.num_of_files; ++file_idx)
+	for (uint file_idx = 0; file_idx < result.num_of_files; ++file_idx)
 	{
 		result.files.push_back(File::load_from_memory(data));
 	}
@@ -71,7 +71,7 @@ void Dir::save_to_memory(char*& data) const
 	set_string(data, name);
 
 	// Save the files
-	for (int file_idx = 0; file_idx < num_of_files; ++file_idx)
+	for (uint file_idx = 0; file_idx < num_of_files; ++file_idx)
 	{
 		files[file_idx].save_to_memory(data);
 	}
@@ -109,12 +109,12 @@ Pak Pak::load_from_memory(const char* data)
 	assert(result.zero == 0);
 
 	// Parse the directories
-	for (int dir_idx = 0; dir_idx < result.num_dirs; ++dir_idx) {
+	for (uint dir_idx = 0; dir_idx < result.num_dirs; ++dir_idx) {
 		result.directories.push_back(Dir::load_from_memory(data));
 
 		// Copy the actual file contents.
 		Dir& current_dir = result.directories[dir_idx];
-		for (int file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
+		for (uint file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
 			File& current_file = current_dir.files[file_idx];
 
 			current_file.data = static_cast<char*>(std::malloc(current_file.size));
@@ -136,12 +136,12 @@ void Pak::save_to_memory(char* data) const
 	set_uint32(data, zero);
 
 	// Save the directories
-	for (int dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
+	for (uint dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
 		directories[dir_idx].save_to_memory(data);
 
 		// Copy the actual file contents.
 		const Dir& current_dir = directories[dir_idx];
-		for (int file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
+		for (uint file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
 			const File& current_file = current_dir.files[file_idx];
 
 			current_file.save_to_memory(data);
@@ -206,13 +206,13 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 	}
 
 	result.tag = Pak::TAG_MAGIC;
-	result.num_dirs = dir_to_files.size();
+	result.num_dirs = static_cast<uint32_t>(dir_to_files.size());
 	result.zero = 0;
 
 	result.directories.resize(result.num_dirs);
 
 	auto map_it = dir_to_files.begin();
-	for (int dir_idx = 0; dir_idx < result.num_dirs; ++dir_idx) {
+	for (uint dir_idx = 0; dir_idx < result.num_dirs; ++dir_idx) {
 		Dir& dir = result.directories[dir_idx];
 		fs::path curr_dir_path = map_it->first;
 		auto& curr_dir_files = map_it->second;
@@ -221,19 +221,19 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 
 		dir.dir_index = dir_idx + 1;
 		dir.set_dir_path(curr_dir_path);
-		dir.name_length = dir.name.size() + 1;
-		dir.num_of_files = curr_dir_files.size();
+		dir.name_length = static_cast<uint32_t>(dir.name.size() + 1);
+		dir.num_of_files = static_cast<uint32_t>(curr_dir_files.size());
 		dir.zero = 0;
 
 		dir.files.resize(dir.num_of_files);
 
-		for (int file_idx = 0; file_idx < dir.num_of_files; ++file_idx) {
+		for (uint file_idx = 0; file_idx < dir.num_of_files; ++file_idx) {
 			File& file = dir.files[file_idx];
 			const fs::directory_entry& file_dir_entry = curr_dir_files[file_idx];
 
 			file.name = file_dir_entry.path().filename().string();
-			file.name_length = file.name.size() + 1;
-			file.size = file_dir_entry.file_size();
+			file.name_length = static_cast<uint32_t>(file.name.size() + 1);
+			file.size = static_cast<uint32_t>(file_dir_entry.file_size());
 			file.zero = 0;
 		}
 
@@ -254,7 +254,7 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 			fs::path file_path = dir_path / dir.get_dir_path() / fs::path(file.name);
 			HANDLE file_handle = CreateFile(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 			DWORD bytes_read = 0;
-			ReadFile(file_handle, file.data, file.size, &bytes_read, 0);
+			ReadFile(file_handle, file.data, static_cast<DWORD>(file.size), &bytes_read, 0);
 		}
 	}
 
@@ -270,15 +270,15 @@ void Pak::save_to_file(std::filesystem::path file_path) const
 
 	HANDLE file = CreateFile(file_path.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	DWORD bytes_written = 0;
-	WriteFile(file, buffer, total_size, &bytes_written, 0);
+	WriteFile(file, buffer, static_cast<DWORD>(total_size), &bytes_written, 0);
 }
 
 void Pak::save_to_dir(std::filesystem::path dir_path) const
 {
-	for (int dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
+	for (uint dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
 		const Dir& current_dir = directories[dir_idx];
 
-		for (int file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
+		for (uint file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
 			const File& current_file = current_dir.files[file_idx];
 
 			fs::path target_dir = dir_path / current_dir.get_dir_path();
@@ -288,7 +288,7 @@ void Pak::save_to_dir(std::filesystem::path dir_path) const
 
 			HANDLE file = CreateFile(target_file.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 			DWORD bytes_written = 0;
-			WriteFile(file, current_file.data, current_file.size, &bytes_written, 0);
+			WriteFile(file, current_file.data, static_cast<DWORD>(current_file.size), &bytes_written, 0);
 		}
 	}
 }
@@ -316,8 +316,9 @@ Pak Pak::load_from_file(std::filesystem::path file_path) {
 		std::exit(MEMORY_ERROR);
 	}
 
+	// TODO(jeysym): This will probably fail if the file is bigger that 4GiB.
 	DWORD bytes_read = 0;
-	if (ReadFile(pak_file, pak_buffer, pak_file_size.QuadPart, &bytes_read, 0) == FALSE) {
+	if (ReadFile(pak_file, pak_buffer, pak_file_size.LowPart, &bytes_read, 0) == FALSE) {
 		std::cerr << "[Error] Failed to read the pak file." << std::endl;
 		std::exit(IO_ERROR);
 	}

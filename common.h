@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <filesystem>
 
+using uint = unsigned int;
+
 
 // Takes pointer to 32-bit big-endian value and makes it the native endianess (little-endian on amd64).
 inline void BE_to_native(uint32_t* value)
