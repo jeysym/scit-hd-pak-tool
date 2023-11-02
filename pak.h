@@ -4,7 +4,7 @@
 
 struct File {
 	uint32_t name_length;	// 32-bit   - Length of the name string.
-	uint64_t size;			// 64-bit   - Size of the file data.
+	uint64_t file_size;		// 64-bit   - Size of the file data.
 	uint64_t pak_offset;	// 64-bit   - Offset from the beginning of the pak to file data.
 	uint32_t crc32;			// 32-bit   - CRC32.
 	uint32_t zero = 0;		// 32-bit   - Always zero, probably padding.
@@ -47,15 +47,16 @@ struct Pak {
 
 	std::vector<Dir> directories;
 
-	static Pak load_from_file(std::filesystem::path file_path);
 	void load_from_memory(const char* data);
-	static Pak load_from_dir(std::filesystem::path dir_path);
-	void save_to_file(std::filesystem::path file_path) const;
 	void save_to_memory(char* data) const;
-	void save_to_dir(std::filesystem::path dir_path) const;
-
 	size_t get_header_size() const;
 	size_t get_total_headers_size() const;
 	size_t get_total_files_size() const;
 	size_t get_total_pak_size() const;
+
+	static Pak load_from_file(std::filesystem::path file_path);
+	void save_to_file(std::filesystem::path file_path) const;
+	static Pak load_from_dir(std::filesystem::path dir_path);
+	void save_to_dir(std::filesystem::path dir_path) const;
+
 };

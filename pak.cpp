@@ -12,7 +12,7 @@ void File::load_from_memory(const char*& data)
 {
 	// Parse the header
 	name_length = get_uint32(data);
-	size = get_uint64(data);
+	file_size = get_uint64(data);
 	pak_offset = get_uint64(data);
 	crc32 = get_uint32(data);
 	zero = get_uint32(data);
@@ -24,7 +24,7 @@ void File::load_from_memory(const char*& data)
 void File::save_to_memory(char*& data) const
 {
 	set_uint32(data, name_length);
-	set_uint64(data, size);
+	set_uint64(data, file_size);
 	set_uint64(data, pak_offset);
 	set_uint32(data, crc32);
 	set_uint32(data, zero);
@@ -33,7 +33,7 @@ void File::save_to_memory(char*& data) const
 
 size_t File::get_header_size() const
 {
-	return sizeof(name_length) + sizeof(size) + sizeof(pak_offset) + sizeof(crc32) + sizeof(zero) + name_length;
+	return sizeof(name_length) + sizeof(file_size) + sizeof(pak_offset) + sizeof(crc32) + sizeof(zero) + name_length;
 }
 
 void Dir::load_from_memory(const char*& data)
@@ -109,8 +109,8 @@ void Pak::load_from_memory(const char* data)
 		for (uint file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
 			File& current_file = current_dir.files[file_idx];
 
-			current_file.data = static_cast<char*>(std::malloc(current_file.size));
-			std::memcpy(current_file.data, data_base + current_file.pak_offset, current_file.size);
+			current_file.data = static_cast<char*>(std::malloc(current_file.file_size));
+			std::memcpy(current_file.data, data_base + current_file.pak_offset, current_file.file_size);
 		}
 	}
 }
@@ -135,7 +135,7 @@ void Pak::save_to_memory(char* data) const
 			const File& current_file = current_dir.files[file_idx];
 
 			current_file.save_to_memory(data);
-			std::memcpy(data_base + current_file.pak_offset, current_file.data, current_file.size);
+			std::memcpy(data_base + current_file.pak_offset, current_file.data, current_file.file_size);
 		}
 	}
 }
@@ -161,7 +161,7 @@ size_t Pak::get_total_files_size() const
 
 	for (const Dir& dir : directories) {
 		for (const File& file : dir.files) {
-			total_size += file.size;
+			total_size += file.file_size;
 		}
 	}
 
@@ -223,7 +223,7 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 
 			file.name = file_dir_entry.path().filename().string();
 			file.name_length = static_cast<uint32_t>(file.name.size() + 1);
-			file.size = static_cast<uint32_t>(file_dir_entry.file_size());
+			file.file_size = static_cast<uint32_t>(file_dir_entry.file_size());
 			file.zero = 0;
 		}
 
@@ -236,15 +236,15 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 	for (auto& dir : result.directories) {
 		for (auto& file : dir.files) {
 			file.pak_offset = file_offset;
-			file_offset += file.size;
+			file_offset += file.file_size;
 
-			file.data = static_cast<char*>(std::malloc(file.size));
+			file.data = static_cast<char*>(std::malloc(file.file_size));
 
 			// read the file here into buffer.
 			fs::path file_path = dir_path / dir.get_dir_path() / fs::path(file.name);
 			HANDLE file_handle = CreateFile(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 			DWORD bytes_read = 0;
-			ReadFile(file_handle, file.data, static_cast<DWORD>(file.size), &bytes_read, 0);
+			ReadFile(file_handle, file.data, static_cast<DWORD>(file.file_size), &bytes_read, 0);
 		}
 	}
 
@@ -278,7 +278,7 @@ void Pak::save_to_dir(std::filesystem::path dir_path) const
 
 			HANDLE file = CreateFile(target_file.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 			DWORD bytes_written = 0;
-			WriteFile(file, current_file.data, static_cast<DWORD>(current_file.size), &bytes_written, 0);
+			WriteFile(file, current_file.data, static_cast<DWORD>(current_file.file_size), &bytes_written, 0);
 		}
 	}
 }
