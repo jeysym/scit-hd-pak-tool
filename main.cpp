@@ -11,6 +11,8 @@
 
 int main(int arg_count, char** args)
 {
+	namespace fs = std::filesystem;
+
 	if (arg_count != 3) {
 		std::cout
 			<< "Usage:\n"
@@ -25,20 +27,22 @@ int main(int arg_count, char** args)
 
 	std::string mode{ args[1] };
 	if (mode == "pak-to-dir") {
-		std::string pak_path{ args[2] };
-		std::string dir_path{ pak_path.begin(), pak_path.end() - 4 };
+		fs::path pak_path{ args[2] };
+		fs::path dir_path = pak_path;
+		dir_path.replace_extension();
 
-		Pak pak = Pak::load_from_file(pak_path.c_str());
-		pak.save_to_dir(dir_path.c_str());
+		Pak pak = Pak::load_from_file(pak_path);
+		pak.save_to_dir(dir_path);
 		
 		return SUCCESS;
 	}
 	else if (mode == "dir-to-pak") {
-		std::string dir_path{ args[2] };
-		std::string pak_path = dir_path + ".pak";
+		fs::path dir_path{ args[2] };
+		fs::path pak_path = dir_path;
+		pak_path.replace_extension(".pak");
 
-		Pak pak = Pak::load_from_dir(dir_path.c_str());
-		pak.save_to_file(pak_path.c_str());
+		Pak pak = Pak::load_from_dir(dir_path);
+		pak.save_to_file(pak_path);
 
 		return SUCCESS;
 	}

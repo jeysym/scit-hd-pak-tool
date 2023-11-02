@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <algorithm>
+#include <filesystem>
 
 
 // Takes pointer to 32-bit big-endian value and makes it the native endianess (little-endian on amd64).
