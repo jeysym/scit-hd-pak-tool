@@ -15,7 +15,7 @@ struct File {
 
 	static File load_from_memory(const char*& data);
 	void save_to_memory(char*& data) const;
-	size_t size_in_pak() const;
+	size_t get_header_size() const;
 };
 
 struct Dir {
@@ -30,7 +30,7 @@ struct Dir {
 
 	static Dir load_from_memory(const char*& data);
 	void save_to_memory(char*& data) const;
-	size_t size_in_pak() const;
+	size_t get_header_size() const;
 	std::filesystem::path get_dir_path() const;
 	void set_dir_path(std::filesystem::path dir_path);
 };
@@ -54,5 +54,8 @@ struct Pak {
 	void save_to_memory(char* data) const;
 	void save_to_dir(std::filesystem::path dir_path) const;
 
-	size_t size_in_pak() const;
+	size_t get_header_size() const;
+	size_t get_total_headers_size() const;
+	size_t get_total_files_size() const;
+	size_t get_total_pak_size() const;
 };

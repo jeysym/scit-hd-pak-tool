@@ -35,7 +35,7 @@ void File::save_to_memory(char*& data) const
 	set_string(data, name);
 }
 
-size_t File::size_in_pak() const
+size_t File::get_header_size() const
 {
 	return sizeof(name_length) + sizeof(size) + sizeof(pak_offset) + sizeof(crc32) + sizeof(zero) + name_length;
 }
@@ -77,7 +77,7 @@ void Dir::save_to_memory(char*& data) const
 	}
 }
 
-size_t Dir::size_in_pak() const
+size_t Dir::get_header_size() const
 {
 	return sizeof(dir_index) + sizeof(name_length) + sizeof(num_of_files) + sizeof(zero) + name_length;
 }
@@ -150,7 +150,40 @@ void Pak::save_to_memory(char* data) const
 	}
 }
 
-size_t Pak::size_in_pak() const
+size_t Pak::get_total_headers_size() const
+{
+	size_t total_size = 0;
+
+	total_size += get_header_size();
+	for (const auto& dir : directories) {
+		total_size += dir.get_header_size();
+		for (const auto& file : dir.files) {
+			total_size += file.get_header_size();
+		}
+	}
+
+	return total_size;
+}
+
+size_t Pak::get_total_files_size() const
+{
+	size_t total_size = 0;
+
+	for (const Dir& dir : directories) {
+		for (const File& file : dir.files) {
+			total_size += file.size;
+		}
+	}
+
+	return total_size;
+}
+
+size_t Pak::get_total_pak_size() const
+{
+	return get_total_headers_size() + get_total_files_size();
+}
+
+size_t Pak::get_header_size() const
 {
 	return sizeof(tag) + sizeof(base_offset) + sizeof(num_dirs) + sizeof(zero);
 }
@@ -207,17 +240,8 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 		map_it++;
 	}
 
-	size_t base_offset = 0;
-	base_offset += result.size_in_pak();
-	for (const auto& dir : result.directories) {
-		base_offset += dir.size_in_pak();
-		for (const auto& file : dir.files) {
-			base_offset += file.size_in_pak();
-		}
-	}
-
-	result.base_offset = base_offset;
-	size_t file_offset = base_offset;
+	result.base_offset = result.get_total_headers_size();
+	size_t file_offset = result.base_offset;
 
 	for (auto& dir : result.directories) {
 		for (auto& file : dir.files) {
@@ -239,17 +263,7 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 
 void Pak::save_to_file(std::filesystem::path file_path) const
 {
-	size_t total_size = 0;
-	total_size += size_in_pak();	// for pak header
-
-	for (const Dir& dir : directories) {
-		total_size += dir.size_in_pak();
-
-		for (const File& file : dir.files) {
-			total_size += file.size_in_pak();
-			total_size += file.size;
-		}
-	}
+	size_t total_size = get_total_pak_size();
 
 	char* buffer = static_cast<char*>(std::malloc(total_size));
 	save_to_memory(buffer);
