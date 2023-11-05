@@ -6,6 +6,23 @@
 
 namespace fs = std::filesystem;
 
+static bool path_alphabetical_compare(const fs::path& a, const fs::path& b) {
+	const auto& a_str = a.native();
+	const auto& b_str = b.native();
+
+	using path_char_t = fs::path::string_type::value_type;
+	return std::lexicographical_compare(
+		a_str.begin(), a_str.end(),
+		b_str.begin(), b_str.end(),
+		[](path_char_t a, path_char_t b) -> bool { return std::toupper(a) < std::toupper(b); }
+	);
+}
+
+static bool dir_entry_alphabetical_compare(const fs::directory_entry& a, const fs::directory_entry& b) {
+	return path_alphabetical_compare(a.path(), b.path());
+}
+
+
 // Data structures serialization
 // =============================
 
@@ -209,7 +226,7 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 		fs::path curr_dir_path = map_it->first;
 		auto& curr_dir_files = map_it->second;
 
-		std::sort(curr_dir_files.begin(), curr_dir_files.end());
+		std::sort(curr_dir_files.begin(), curr_dir_files.end(), dir_entry_alphabetical_compare);
 
 		dir.dir_index = dir_idx + 1;
 		dir.set_dir_path(curr_dir_path);
