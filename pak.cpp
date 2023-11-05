@@ -105,6 +105,8 @@ void Pak::load_from_memory(const char* data)
 	for (uint dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
 		Dir& current_dir = directories[dir_idx];
 
+		current_dir.load_from_memory(data);
+
 		// Copy the actual file contents.
 		for (uint file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
 			File& current_file = current_dir.files[file_idx];
@@ -134,7 +136,6 @@ void Pak::save_to_memory(char* data) const
 		for (uint file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
 			const File& current_file = current_dir.files[file_idx];
 
-			current_file.save_to_memory(data);
 			std::memcpy(data_base + current_file.pak_offset, current_file.data, current_file.file_size);
 		}
 	}
