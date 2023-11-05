@@ -1,4 +1,5 @@
 #include "pak.h"
+#include "crc.h"
 #include <windows.h>
 #include <iostream>
 #include <filesystem>
@@ -246,6 +247,7 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 			HANDLE file_handle = CreateFile(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 			DWORD bytes_read = 0;
 			ReadFile(file_handle, file.data, static_cast<DWORD>(file.file_size), &bytes_read, 0);
+			file.crc32 = crc_32(file.data, file.file_size);
 		}
 	}
 
