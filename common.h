@@ -89,6 +89,11 @@ inline std::string replace_all(std::string original, const std::string_view& wha
 	return original;
 }
 
+inline std::filesystem::path remove_trailing_separators(std::filesystem::path dir_path) {
+	auto dir_path_str = dir_path.native();
+	return std::filesystem::path{ dir_path_str.substr(0, dir_path_str.find_last_not_of('\\') + 1) };
+}
+
 enum Error {
 	SUCCESS = 0,
 	MEMORY_ERROR,
