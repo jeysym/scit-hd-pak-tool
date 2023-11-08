@@ -200,6 +200,54 @@ size_t Pak::get_header_size() const
 // Loading/saving of data structures from/to files and directories.
 // ================================================================
 
+void Pak::load_from_file(std::filesystem::path file_path) {
+	HANDLE pak_file = CreateFile(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if (pak_file == INVALID_HANDLE_VALUE) {
+		std::cerr << "[Error] Failed to open the pak file." << std::endl;
+		std::exit(IO_ERROR);
+	}
+
+	LARGE_INTEGER pak_file_size;
+	if (GetFileSizeEx(pak_file, &pak_file_size) == 0) {
+		std::cerr << "[Error] Can't get pak file size." << std::endl;
+		std::exit(IO_ERROR);
+	}
+
+	// Allocate big buffer to hold the pak file contents.
+	char* pak_buffer = static_cast<char*>(std::malloc(
+		static_cast<size_t>(pak_file_size.QuadPart))
+		);
+
+	if (pak_buffer == nullptr) {
+		std::cerr << "[Error] Failed to allocate buffer for pak file." << std::endl;
+		std::exit(MEMORY_ERROR);
+	}
+
+	// TODO(jeysym): This will probably fail if the file is bigger that 4GiB.
+	DWORD bytes_read = 0;
+	if (ReadFile(pak_file, pak_buffer, pak_file_size.LowPart, &bytes_read, 0) == FALSE) {
+		std::cerr << "[Error] Failed to read the pak file." << std::endl;
+		std::exit(IO_ERROR);
+	}
+
+	CloseHandle(pak_file);
+
+	load_from_memory(pak_buffer);
+	std::free(pak_buffer);
+}
+
+void Pak::save_to_file(std::filesystem::path file_path) const
+{
+	size_t total_size = get_total_pak_size();
+
+	char* buffer = static_cast<char*>(std::malloc(total_size));
+	save_to_memory(buffer);
+
+	HANDLE file = CreateFile(file_path.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	DWORD bytes_written = 0;
+	WriteFile(file, buffer, static_cast<DWORD>(total_size), &bytes_written, 0);
+}
+
 void Pak::load_from_dir(std::filesystem::path dir_path)
 {
 	std::map<fs::path, std::vector<fs::directory_entry>> dir_to_files;
@@ -267,18 +315,6 @@ void Pak::load_from_dir(std::filesystem::path dir_path)
 	}
 }
 
-void Pak::save_to_file(std::filesystem::path file_path) const
-{
-	size_t total_size = get_total_pak_size();
-
-	char* buffer = static_cast<char*>(std::malloc(total_size));
-	save_to_memory(buffer);
-
-	HANDLE file = CreateFile(file_path.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
-	DWORD bytes_written = 0;
-	WriteFile(file, buffer, static_cast<DWORD>(total_size), &bytes_written, 0);
-}
-
 void Pak::save_to_dir(std::filesystem::path dir_path) const
 {
 	for (uint dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
@@ -297,40 +333,4 @@ void Pak::save_to_dir(std::filesystem::path dir_path) const
 			WriteFile(file, current_file.data, static_cast<DWORD>(current_file.file_size), &bytes_written, 0);
 		}
 	}
-}
-
-void Pak::load_from_file(std::filesystem::path file_path) {
-	HANDLE pak_file = CreateFile(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-	if (pak_file == INVALID_HANDLE_VALUE) {
-		std::cerr << "[Error] Failed to open the pak file." << std::endl;
-		std::exit(IO_ERROR);
-	}
-
-	LARGE_INTEGER pak_file_size;
-	if (GetFileSizeEx(pak_file, &pak_file_size) == 0) {
-		std::cerr << "[Error] Can't get pak file size." << std::endl;
-		std::exit(IO_ERROR);
-	}
-
-	// Allocate big buffer to hold the pak file contents.
-	char* pak_buffer = static_cast<char*>(std::malloc(
-		static_cast<size_t>(pak_file_size.QuadPart))
-		);
-
-	if (pak_buffer == nullptr) {
-		std::cerr << "[Error] Failed to allocate buffer for pak file." << std::endl;
-		std::exit(MEMORY_ERROR);
-	}
-
-	// TODO(jeysym): This will probably fail if the file is bigger that 4GiB.
-	DWORD bytes_read = 0;
-	if (ReadFile(pak_file, pak_buffer, pak_file_size.LowPart, &bytes_read, 0) == FALSE) {
-		std::cerr << "[Error] Failed to read the pak file." << std::endl;
-		std::exit(IO_ERROR);
-	}
-
-	CloseHandle(pak_file);
-
-	load_from_memory(pak_buffer);
-	std::free(pak_buffer);
 }
