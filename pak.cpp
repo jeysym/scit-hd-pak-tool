@@ -69,9 +69,8 @@ void Dir::load_from_memory(const char*& data)
 
 	// Parse the files
 	files.resize(num_of_files);
-	for (uint file_idx = 0; file_idx < num_of_files; ++file_idx)
-	{
-		files[file_idx].load_from_memory(data);
+	for (auto& file : files) {
+		file.load_from_memory(data);
 	}
 }
 
@@ -84,9 +83,8 @@ void Dir::save_to_memory(char*& data) const
 	set_string(data, name);
 
 	// Save the files
-	for (uint file_idx = 0; file_idx < num_of_files; ++file_idx)
-	{
-		files[file_idx].save_to_memory(data);
+	for (const auto& file : files) {
+		file.save_to_memory(data);
 	}
 }
 
@@ -119,17 +117,13 @@ void Pak::load_from_memory(const char* data)
 
 	// Parse the directories
 	directories.resize(num_dirs);
-	for (uint dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
-		Dir& current_dir = directories[dir_idx];
-
-		current_dir.load_from_memory(data);
+	for (auto& dir : directories) {
+		dir.load_from_memory(data);
 
 		// Copy the actual file contents.
-		for (uint file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
-			File& current_file = current_dir.files[file_idx];
-
-			current_file.data = static_cast<char*>(std::malloc(current_file.file_size));
-			std::memcpy(current_file.data, data_base + current_file.pak_offset, current_file.file_size);
+		for (auto& file : dir.files) {
+			file.data = static_cast<char*>(std::malloc(file.file_size));
+			std::memcpy(file.data, data_base + file.pak_offset, file.file_size);
 		}
 	}
 }
@@ -145,15 +139,12 @@ void Pak::save_to_memory(char* data) const
 	set_uint32(data, zero);
 
 	// Save the directories
-	for (uint dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
-		directories[dir_idx].save_to_memory(data);
+	for (const auto& dir : directories) {
+		dir.save_to_memory(data);
 
 		// Copy the actual file contents.
-		const Dir& current_dir = directories[dir_idx];
-		for (uint file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
-			const File& current_file = current_dir.files[file_idx];
-
-			std::memcpy(data_base + current_file.pak_offset, current_file.data, current_file.file_size);
+		for (const auto& file : dir.files) {
+			std::memcpy(data_base + file.pak_offset, file.data, file.file_size);
 		}
 	}
 }
@@ -276,35 +267,36 @@ void Pak::load_from_dir(std::filesystem::path dir_path)
 	num_dirs = static_cast<uint32_t>(dir_to_files.size());
 	zero = 0;
 
-	directories.resize(num_dirs);
-
 	auto map_it = dir_to_files.begin();
-	for (uint dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
-		Dir& dir = directories[dir_idx];
-		fs::path curr_dir_path = map_it->first;
-		auto& curr_dir_files = map_it->second;
+	uint dir_idx = 1;
+	directories.resize(num_dirs);
+	for (auto& dir : directories) {
+		fs::path dir_path = map_it->first;
+		auto& dir_files = map_it->second;
 
-		std::sort(curr_dir_files.begin(), curr_dir_files.end(), dir_entry_alphabetical_compare);
+		std::sort(dir_files.begin(), dir_files.end(), dir_entry_alphabetical_compare);
 
-		dir.dir_index = dir_idx + 1;
-		dir.set_dir_path(curr_dir_path);
+		dir.dir_index = dir_idx;
+		dir.set_dir_path(dir_path);
 		dir.name_length = static_cast<uint32_t>(dir.name.size() + 1);
-		dir.num_of_files = static_cast<uint32_t>(curr_dir_files.size());
+		dir.num_of_files = static_cast<uint32_t>(dir_files.size());
 		dir.zero = 0;
 
 		dir.files.resize(dir.num_of_files);
-
-		for (uint file_idx = 0; file_idx < dir.num_of_files; ++file_idx) {
-			File& file = dir.files[file_idx];
-			const fs::directory_entry& file_dir_entry = curr_dir_files[file_idx];
+		uint file_idx = 0;
+		for (auto& file : dir.files) {
+			const fs::directory_entry& file_dir_entry = dir_files[file_idx];
 
 			file.name = file_dir_entry.path().filename().string();
 			file.name_length = static_cast<uint32_t>(file.name.size() + 1);
 			file.file_size = static_cast<uint32_t>(file_dir_entry.file_size());
 			file.zero = 0;
+
+			file_idx++;
 		}
 
 		map_it++;
+		dir_idx++;
 	}
 
 	base_offset = get_total_headers_size();
