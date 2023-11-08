@@ -200,10 +200,8 @@ size_t Pak::get_header_size() const
 // Loading/saving of data structures from/to files and directories.
 // ================================================================
 
-Pak Pak::load_from_dir(std::filesystem::path dir_path)
+void Pak::load_from_dir(std::filesystem::path dir_path)
 {
-	Pak result;
-
 	std::map<fs::path, std::vector<fs::directory_entry>> dir_to_files;
 
 	for (const auto& dir_entry : fs::recursive_directory_iterator(dir_path)) {
@@ -214,15 +212,15 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 		}
 	}
 
-	result.tag = Pak::TAG_MAGIC;
-	result.num_dirs = static_cast<uint32_t>(dir_to_files.size());
-	result.zero = 0;
+	tag = Pak::TAG_MAGIC;
+	num_dirs = static_cast<uint32_t>(dir_to_files.size());
+	zero = 0;
 
-	result.directories.resize(result.num_dirs);
+	directories.resize(num_dirs);
 
 	auto map_it = dir_to_files.begin();
-	for (uint dir_idx = 0; dir_idx < result.num_dirs; ++dir_idx) {
-		Dir& dir = result.directories[dir_idx];
+	for (uint dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
+		Dir& dir = directories[dir_idx];
 		fs::path curr_dir_path = map_it->first;
 		auto& curr_dir_files = map_it->second;
 
@@ -249,10 +247,10 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 		map_it++;
 	}
 
-	result.base_offset = result.get_total_headers_size();
-	size_t file_offset = result.base_offset;
+	base_offset = get_total_headers_size();
+	size_t file_offset = base_offset;
 
-	for (auto& dir : result.directories) {
+	for (auto& dir : directories) {
 		for (auto& file : dir.files) {
 			file.pak_offset = file_offset;
 			file_offset += file.file_size;
@@ -267,8 +265,6 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 			file.crc32 = g_crc32.calculate(file.data, file.file_size);
 		}
 	}
-
-	return result;
 }
 
 void Pak::save_to_file(std::filesystem::path file_path) const
@@ -303,7 +299,7 @@ void Pak::save_to_dir(std::filesystem::path dir_path) const
 	}
 }
 
-Pak Pak::load_from_file(std::filesystem::path file_path) {
+void Pak::load_from_file(std::filesystem::path file_path) {
 	HANDLE pak_file = CreateFile(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if (pak_file == INVALID_HANDLE_VALUE) {
 		std::cerr << "[Error] Failed to open the pak file." << std::endl;
@@ -335,9 +331,6 @@ Pak Pak::load_from_file(std::filesystem::path file_path) {
 
 	CloseHandle(pak_file);
 
-	Pak pak;
-	pak.load_from_memory(pak_buffer);
+	load_from_memory(pak_buffer);
 	std::free(pak_buffer);
-
-	return pak;
 }

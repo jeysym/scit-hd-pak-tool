@@ -55,9 +55,9 @@ struct Pak {
 	size_t get_total_files_size() const;
 	size_t get_total_pak_size() const;
 
-	static Pak load_from_file(std::filesystem::path file_path);
+	void load_from_file(std::filesystem::path file_path);
 	void save_to_file(std::filesystem::path file_path) const;
-	static Pak load_from_dir(std::filesystem::path dir_path);
+	void load_from_dir(std::filesystem::path dir_path);
 	void save_to_dir(std::filesystem::path dir_path) const;
 
 };

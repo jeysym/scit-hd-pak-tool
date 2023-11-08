@@ -39,7 +39,8 @@ int main(int arg_count, char** args)
 			return ARGUMENT_ERROR;
 		}
 
-		Pak pak = Pak::load_from_file(pak_path);
+		Pak pak;
+		pak.load_from_file(pak_path);
 		pak.save_to_dir(dir_path);
 		return SUCCESS;
 	}
@@ -53,7 +54,8 @@ int main(int arg_count, char** args)
 			return ARGUMENT_ERROR;
 		}
 
-		Pak pak = Pak::load_from_dir(dir_path);
+		Pak pak;
+		pak.load_from_dir(dir_path);
 		pak.save_to_file(pak_path);
 		return SUCCESS;
 	}
