@@ -320,8 +320,17 @@ void Pak::load_from_dir(std::filesystem::path dir_path)
 			// read the file here into buffer.
 			fs::path file_path = dir_path / dir.get_dir_path() / fs::path(file.name);
 			HANDLE file_handle = CreateFile(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+			if (file_handle == INVALID_HANDLE_VALUE) {
+				std::cerr << "[Error] Failed to open the file " << file_path << "\n";
+				std::exit(IO_ERROR);
+			}
+			
 			DWORD bytes_read = 0;
-			ReadFile(file_handle, file.data, static_cast<DWORD>(file.file_size), &bytes_read, 0);
+			if (ReadFile(file_handle, file.data, static_cast<DWORD>(file.file_size), &bytes_read, 0) == FALSE) {
+				std::cerr << "[Error] Failed to read the file " << file_path << "\n";
+				std::exit(IO_ERROR);
+			}
+			
 			file.crc32 = g_crc32.calculate(file.data, file.file_size);
 		}
 	}
@@ -329,20 +338,24 @@ void Pak::load_from_dir(std::filesystem::path dir_path)
 
 void Pak::save_to_dir(std::filesystem::path dir_path) const
 {
-	for (uint dir_idx = 0; dir_idx < num_dirs; ++dir_idx) {
-		const Dir& current_dir = directories[dir_idx];
+	for (const Dir& current_dir : directories) {
+		for (const File& current_file : current_dir.files) {
+			fs::path file_dir_path = dir_path / current_dir.get_dir_path();
+			fs::path file_path = file_dir_path / fs::path(current_file.name);
 
-		for (uint file_idx = 0; file_idx < current_dir.num_of_files; ++file_idx) {
-			const File& current_file = current_dir.files[file_idx];
+			std::filesystem::create_directories(file_dir_path);
 
-			fs::path target_dir = dir_path / current_dir.get_dir_path();
-			fs::path target_file = target_dir / fs::path(current_file.name);
+			HANDLE file_handle = CreateFile(file_path.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+			if (file_handle == INVALID_HANDLE_VALUE) {
+				std::cerr << "[Error] Failed to open the file " << file_path << "\n";
+				std::exit(IO_ERROR);
+			}
 
-			std::filesystem::create_directories(target_dir);
-
-			HANDLE file = CreateFile(target_file.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 			DWORD bytes_written = 0;
-			WriteFile(file, current_file.data, static_cast<DWORD>(current_file.file_size), &bytes_written, 0);
+			if (WriteFile(file_handle, current_file.data, static_cast<DWORD>(current_file.file_size), &bytes_written, 0) == FALSE) {
+				std::cerr << "[Error] Failed to write to the file " << file_path << "\n";
+				std::exit(IO_ERROR);
+			}
 		}
 	}
 }
