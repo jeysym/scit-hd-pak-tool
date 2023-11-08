@@ -6,7 +6,8 @@ struct File {
 	uint32_t name_length;	// 32-bit   - Length of the name string.
 	uint64_t file_size;		// 64-bit   - Size of the file data.
 	uint64_t pak_offset;	// 64-bit   - Offset from the beginning of the pak to file data.
-	uint32_t crc32;			// 32-bit   - CRC32.
+	uint32_t crc32;			// 32-bit   - CRC32 of the file.
+							// In some paks this seems to be used differently. Game probably ignores this field.
 	uint32_t zero = 0;		// 32-bit   - Always zero, probably padding.
 	std::string name;		// 0-terminated UTF8 string - Name of the file.
 							// Example: "campfire_01.fxt\0"
@@ -24,7 +25,7 @@ struct Dir {
 	uint32_t num_of_files;	// 32-bit   - Number of files in directory.
 	uint32_t zero = 0;		// 32-bit   - Always zero, probably some padding.
 	std::string name;		// 0-terminated UTF8 string - Name of the directory.
-							// Example: "\\bin_win32\\\\effects\\\0"
+							// Example: "\\bin_win32\\effects\\\0"
 
 	std::vector<File> files;
 
