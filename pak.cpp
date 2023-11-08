@@ -101,11 +101,9 @@ std::filesystem::path Dir::get_dir_path() const
 	return fs::path{ rel_dir_path };
 }
 
-void Dir::set_dir_path(std::filesystem::path dir_path)
+void Dir::set_dir_path(std::filesystem::path rel_dir_path)
 {
-	std::string path1 = dir_path.string();						// "pak_folder\\dir_a\\dir_b"
-	std::string path2 = path1.substr(path1.find('\\') + 1);		// "dir_a\\dir_b"
-	name = "\\" + path2 + "\\";									// "\\dir_a\\dir_b\\"
+	name = "\\" + rel_dir_path.string() + "\\";
 }
 
 void Pak::load_from_memory(const char* data)
@@ -210,8 +208,9 @@ Pak Pak::load_from_dir(std::filesystem::path dir_path)
 
 	for (const auto& dir_entry : fs::recursive_directory_iterator(dir_path)) {
 		if (dir_entry.is_regular_file()) {
-			fs::path parent_path = dir_entry.path().parent_path();
-			dir_to_files[parent_path].push_back(dir_entry);
+			fs::path rel_file_path = fs::relative(dir_entry.path(), dir_path);
+			fs::path rel_parent_path = rel_file_path.parent_path();
+			dir_to_files[rel_parent_path].push_back(dir_entry);
 		}
 	}
 
