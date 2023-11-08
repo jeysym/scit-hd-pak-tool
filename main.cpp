@@ -13,7 +13,6 @@
 int main(int arg_count, char** args)
 {
 	namespace fs = std::filesystem;
-	crc_32_init();
 
 	if (arg_count != 3) {
 		std::cout
