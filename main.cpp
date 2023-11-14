@@ -17,7 +17,7 @@ scit-hd-pak-tool repak <dir-path> <pak-path>
 
 1. Run `scit-hd-pak-tool unpak "c:\program files\santa claus in trouble\data.pak" c:\data_pak`
 2. Edit files in directory `c:\data_pak`
-3. Run `scit-hd-pak-tool repak c:\data_pak c:\program files\santa claus in trouble\data.pak`
+3. Run `scit-hd-pak-tool repak "c:\data_pak c:\program files\santa claus in trouble\data.pak"`
 )";
 
 int main(int arg_count, char** args)
