@@ -31,5 +31,11 @@
     <ClInclude Include="crc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="scit-hd-pak-tool.rc" />
   </ItemGroup>
 </Project>
